@@ -1,0 +1,4 @@
+Server:
+  Addr: :8080
+DB:
+  DSN:
