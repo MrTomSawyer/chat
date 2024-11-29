@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os/signal"
 	"syscall"
@@ -16,12 +15,17 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+var path string
+
+func init() {
+	flag.StringVar(&path, "cfg", "./config/config.yml", "config file path")
+}
+
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	ctx := context.Background()
+	notifyCtx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	var path string
-	flag.StringVar(&path, "cfg", "./config/config.yml", "config file path")
 	cfg := config.MustLoadConfig(path)
 
 	conn, err := pgx.Connect(ctx, cfg.DB.DSN)
@@ -41,16 +45,10 @@ func main() {
 	user.NewUserController(r, userServ).Init()
 
 	server := app.New(cfg.Server.Addr, r)
-	go server.MustListenHTTP()
 
-	fmt.Println("=====================")
-	fmt.Println("Chat server v1.0")
-	fmt.Println("Status: Running")
-	fmt.Printf("Environment: %s\n", cfg.Env)
-	fmt.Printf("Port: %s\n", cfg.Server.Addr)
-	fmt.Println("=====================")
+	go server.MustStart()
 
-	<-ctx.Done()
+	<-notifyCtx.Done()
 
 	cwt, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

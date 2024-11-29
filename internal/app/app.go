@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type App struct {
@@ -20,8 +21,20 @@ func New(addr string, handler http.Handler) *App {
 	}
 }
 
-func (a *App) MustListenHTTP() {
-	if err := a.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+func (a *App) ListenHTTP() error {
+	return a.httpServer.ListenAndServe()
+}
+
+func (a *App) StartWS() error {
+	return nil
+}
+
+func (a *App) MustStart() {
+	var g errgroup.Group
+	g.Go(a.ListenHTTP)
+	g.Go(a.StartWS)
+
+	if err := g.Wait(); err != nil {
 		panic(err)
 	}
 }

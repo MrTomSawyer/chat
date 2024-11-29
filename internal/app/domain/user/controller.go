@@ -43,16 +43,22 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-
+		http.Error(w, "failed to read request body: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	var user model.User
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-
+		http.Error(w, "failed to unmarshal request body: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	err = c.s.Create(r.Context(), &user)
 	if err != nil {
+		http.Error(w, "failed to create user: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
 }
