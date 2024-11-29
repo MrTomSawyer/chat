@@ -1,0 +1,5 @@
+env: dev
+server:
+  addr: :8080
+db:
+  dsn: postgres://username:password@localhost:5432/chat
